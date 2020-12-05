@@ -4,7 +4,9 @@ import (
 	"container/list"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -17,9 +19,94 @@ const (
 )
 
 func main() {
-	dayFour()
+	dayFive()
 }
 
+func dayFive() {
+	data, err := ioutil.ReadFile("inputs/day5.txt")
+
+	maxNum := -1
+	pass := ""
+
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+	temp := strings.Split(string(data), "\n")
+
+	list := make([]int, len(temp))
+	count := 0
+	for _, line := range temp {
+		row := getRow(line)
+		column := getColumn(line)
+		id := row*8 + column
+		list[count] = id
+		count++
+
+		fmt.Printf("Ticket: %s Row: %d Column: %d \n", line, row, column)
+
+		if maxNum < id {
+			maxNum = id
+			pass = line
+		}
+	}
+
+	fmt.Printf("Max ID %d is for ID %s \n", maxNum, pass)
+
+	sort.Ints(list)
+
+	for i := 0; i < len(list)-1; i++ {
+		if list[i] == (list[i+1] - 2) {
+			fmt.Printf("My ID is %d\n", list[i]+1)
+			break
+		}
+	}
+}
+
+func getRow(ticket string) int {
+	min := 0
+	max := 127
+	for i := 0; i < 7; i++ {
+		calc := float64(max-min) / 2.0
+		if ticket[i] == 'F' {
+			max -= int(math.Round(calc))
+
+		} else if ticket[i] == 'B' {
+			min += int(math.Round(calc))
+		}
+		fmt.Printf("%s Current row min: %d Current max %d\n", ticket, min, max)
+	}
+
+	if ticket[6] == 'F' {
+		return int(min)
+	} else if ticket[6] == 'B' {
+		return int(max)
+	}
+
+	return -1
+}
+
+func getColumn(ticket string) int {
+	min := 0
+	max := 7
+	for i := 7; i < 10; i++ {
+		calc := float64(max-min) / 2.0
+		if ticket[i] == 'L' {
+			max -= int(math.Round(calc))
+		} else if ticket[i] == 'R' {
+			min += int(math.Round(calc))
+		}
+		//fmt.Printf("%s Current col min: %d Current max %d\n", ticket, min, max)
+	}
+
+	if ticket[9] == 'L' {
+		return min
+	} else if ticket[9] == 'R' {
+		return max
+	}
+
+	return -1
+}
 func dayFour() {
 	data, err := ioutil.ReadFile("inputs/day4.txt")
 	if err != nil {
