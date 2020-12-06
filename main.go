@@ -19,7 +19,61 @@ const (
 )
 
 func main() {
-	dayFive()
+	daySix()
+}
+
+func daySix() {
+	data, err := ioutil.ReadFile("inputs/day6.txt")
+
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+
+	temp := strings.Split(string(data), "\n")
+	list := list.New()
+	sMap := map[byte]int{}
+	sMap[1] = 0
+	list.PushBack(sMap)
+
+	for _, line := range temp {
+		if len(line) == 0 {
+			aux := map[byte]int{}
+			sMap = aux
+			sMap[1] = 0
+			list.PushBack(sMap)
+			continue
+		} else {
+			sMap[1]++
+			for i := 0; i < len(line); i++ {
+				if _, ok := sMap[line[i]]; ok {
+					sMap[line[i]]++
+				} else {
+					sMap[line[i]] = 1
+				}
+			}
+		}
+	}
+
+	totalCount := 0
+	for e := list.Front(); e != nil; e = e.Next() {
+		thisMap := e.Value.(map[byte]int)
+		//fmt.Printf("Lenght for is %d and people is %d\n", len(thisMap)-1, thisMap[1])
+		count := 0
+		for val, el := range thisMap {
+			if val == 1 {
+				continue
+			}
+			//fmt.Printf("Val is %s and el is %d\n", string(val), el)
+			if el == thisMap[1] {
+				count++
+			}
+		}
+		totalCount += count
+		fmt.Printf("Adding %d\n", count)
+	}
+
+	fmt.Printf("The sum is %d\n", totalCount)
 }
 
 func dayFive() {
