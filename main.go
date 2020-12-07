@@ -19,7 +19,102 @@ const (
 )
 
 func main() {
-	daySix()
+	daySeven()
+}
+
+// BagSpace for exercise 7
+type BagSpace struct {
+	bagType string
+	count   int
+}
+
+func daySeven() {
+
+	data, err := ioutil.ReadFile("inputs/day7.txt")
+	r := regexp.MustCompile("([A-Za-z0-9 ]+)( bags contain) (\\d+|no) ([A-Za-z0-9 ]+)( bags?)((,) (\\d+) ([A-Za-z0-9 ]+) bags?){0,}(\\.)")
+	r2 := regexp.MustCompile("((,) (\\d+) ([A-Za-z0-9 ]+) bags?)")
+
+	withoutBags := 0
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+
+	temp := strings.Split(string(data), "\n")
+	thisMap := map[string][]BagSpace{}
+	for _, line := range temp {
+		match := r.FindStringSubmatch(line)
+
+		initialKey := match[1]
+		if match[3] != "no" {
+			count, _ := strconv.Atoi(match[3])
+			thisMap[initialKey] = append(thisMap[initialKey], BagSpace{count: count, bagType: match[4]})
+			match2 := r2.FindAllStringSubmatch(line, -1)
+			for _, v := range match2 {
+				vCount, _ := strconv.Atoi(v[3])
+				thisMap[initialKey] = append(thisMap[initialKey], BagSpace{count: vCount, bagType: v[4]})
+			}
+
+		} else {
+			withoutBags++
+		}
+	}
+
+	count := 0
+	bag := "shiny gold"
+	fmt.Println(thisMap)
+	for val, el := range thisMap {
+		//fmt.Println(el)
+
+		fmt.Printf("Trying to find for %s in the bag %s\n", bag, val)
+		if recFind(thisMap, el, map[string]bool{}, bag, val) {
+			count++
+		}
+	}
+
+	fmt.Printf("Map is %d, without bags is %d and num lines is %d\n", len(thisMap), withoutBags, len(temp))
+	fmt.Printf("You can use %d bags\n", count)
+
+	sum := recSum(thisMap, thisMap[bag], map[string]bool{}, bag, bag)
+	fmt.Printf("You can carry %d bags\n", sum)
+
+}
+
+func recSum(thisMap map[string][]BagSpace, list []BagSpace, beenIn map[string]bool, bag string, currentKey string) int {
+
+	sum := 0
+	for _, v := range list {
+		sum += v.count + v.count*recSum(thisMap, thisMap[v.bagType], beenIn, bag, v.bagType)
+	}
+	return sum
+}
+
+func recFind(thisMap map[string][]BagSpace, list []BagSpace, beenIn map[string]bool, bag string, currentKey string) bool {
+
+	for _, v := range list {
+
+		//fmt.Printf("%s - %d\n", v.bagType, v.count)
+
+		if _, ok := beenIn[v.bagType]; ok {
+			continue
+		}
+		beenIn[v.bagType] = true
+
+		if bag == v.bagType {
+			fmt.Println("Bag is valid")
+			return true
+			/*valid := v.count > 1 || len(list) > 1
+			if valid {
+				fmt.Println("Bag is valid")
+				return true
+			}*/
+		}
+		childOld := recFind(thisMap, thisMap[v.bagType], beenIn, bag, v.bagType)
+		if childOld {
+			return true
+		}
+	}
+	return false
 }
 
 func daySix() {
