@@ -19,13 +19,80 @@ const (
 )
 
 func main() {
-	daySeven()
+	dayEight()
+}
+
+func dayEight() {
+	lines := readFile("inputs/day8.txt")
+
+	_, ended, path := bruteForceFind(-1, lines)
+	if !ended {
+		for i := len(path) - 1; i >= 0; i-- {
+			count, end, _ := bruteForceFind(path[i], lines)
+			if end {
+				fmt.Printf("Total count is %d when i switched line %d\n", count, i)
+			}
+		}
+	}
+
+	fmt.Println("Done")
+
+}
+
+func bruteForceFind(switchIndex int, lines []string) (int, bool, []int) {
+	beenIn := map[int]bool{}
+	count := 0
+	path := []int{}
+
+	for i := 0; i < len(lines); {
+
+		if _, ok := beenIn[i]; ok {
+			return count, false, path
+		}
+		beenIn[i] = true
+
+		aux := strings.Split(string(lines[i]), " ")
+		val := aux[0]
+		amount, _ := strconv.Atoi(aux[1])
+		switch val {
+		case "nop":
+			i++
+			break
+		case "acc":
+			i++
+			count += amount
+			break
+		case "jmp":
+			if i != switchIndex {
+				path = append(path, i)
+				i += amount
+			} else {
+				i++
+			}
+			break
+		}
+
+	}
+
+	return count, true, path
 }
 
 // BagSpace for exercise 7
 type BagSpace struct {
 	bagType string
 	count   int
+}
+
+func readFile(file string) []string {
+	data, err := ioutil.ReadFile(file)
+	if err != nil {
+		fmt.Println("File reading error", err)
+		var aux []string
+		return aux
+	}
+
+	temp := strings.Split(string(data), "\n")
+	return temp
 }
 
 func daySeven() {
