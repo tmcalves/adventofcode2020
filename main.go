@@ -19,7 +19,118 @@ const (
 )
 
 func main() {
-	dayEight()
+	dayNine()
+}
+
+func dayNine() {
+	lines := readFile("inputs/day9.txt")
+	arr := []int{}
+	sum := 0
+	total := 0
+	for _, line := range lines {
+		val, _ := strconv.Atoi(line)
+		//fmt.Println(arr)
+		if len(arr) == 25 {
+			sum = val
+			count := hasSum(arr, sum)
+			if count == 0 {
+				//fmt.Printf("%d does not sum\n", sum)
+				break
+			}
+			total += count
+			arr = append(arr[:0], arr[1:]...)
+		}
+		arr = append(arr, val)
+	}
+
+	// part 2
+	found := false
+	for _, line := range lines {
+		if found {
+			break
+		}
+		val, _ := strconv.Atoi(line)
+		arr = append(arr, val)
+		if len(arr) > 1 {
+			result := sumIsEqual(arr, sum)
+
+			//fmt.Println(arr)
+			//fmt.Printf("Sum: %d. Result: %d\n", sum, result)
+			switch result {
+			case 0:
+				fmt.Print("Found result: ")
+				fmt.Println(arr)
+				found = true
+				break
+			case 1:
+				for len(arr) > 1 {
+					arr = append(arr[:0], arr[1:]...)
+					result := sumIsEqual(arr, sum)
+					if result == 1 {
+						continue
+					}
+					if result == 0 {
+						found = true
+						fmt.Print("Found result: ")
+						fmt.Println(arr)
+						break
+					}
+					if result == -1 {
+						break
+					}
+				}
+				break
+			case -1:
+				break
+			}
+		}
+	}
+
+	min, max := findMinAndMax(arr)
+	fmt.Println(arr)
+
+	fmt.Printf("Min: %d, Max: %d, Sum: %d\n", min, max, min+max)
+
+}
+
+func findMinAndMax(a []int) (min int, max int) {
+	min = a[0]
+	max = a[0]
+	for _, value := range a {
+		if value < min {
+			min = value
+		}
+		if value > max {
+			max = value
+		}
+	}
+	return min, max
+}
+
+func sumIsEqual(arr []int, sum int) int {
+	count := 0
+	for i := 0; i < len(arr); i++ {
+		count += arr[i]
+	}
+
+	if count == sum {
+		return 0
+	}
+	if count < sum {
+		return -1
+	}
+	return 1
+}
+func hasSum(arr []int, sum int) int {
+	count := 0
+	for i := 0; i < len(arr)-1; i++ {
+		for x := 0; x < len(arr); x++ {
+			if arr[i]+arr[x] == sum {
+				count++
+			}
+		}
+	}
+	return count
 }
 
 func dayEight() {
