@@ -19,7 +19,188 @@ const (
 )
 
 func main() {
-	dayNine()
+	dayTen()
+}
+
+func dayTen() {
+	lines := readFile("inputs/day10.txt")
+
+	list := []int{}
+	list = append(list, 0)
+	for _, line := range lines {
+		val, _ := strconv.Atoi(line)
+		list = append(list, val)
+	}
+
+	sort.Ints(list)
+	oneInc := 0
+	threeInc := 0
+	otherInc := 0
+
+	for i := 1; i < len(list); i++ {
+		diff := list[i] - list[i-1]
+		fmt.Printf("%d - %d =  %d\n", list[i], list[i-1], list[i]-list[i-1])
+		switch diff {
+		case 1:
+			oneInc++
+			break
+		case 3:
+			threeInc++
+			break
+		default:
+			fmt.Printf("Found %d\n", diff)
+			otherInc++
+			break
+		}
+	}
+	//maxList:= list[len(list)-1] +3
+	threeInc++
+
+	fmt.Printf("One inc: %d, Three inc: %d, Other: %d, Total: %d\n", oneInc, threeInc, otherInc, len(list))
+	fmt.Printf("Result: %d \n", oneInc*threeInc)
+
+	dayTenPart2(list)
+
+}
+
+func dayTenPart2(list []int) {
+
+	thisMap := map[int]bool{}
+	for i := 0; i < len(list); i++ {
+		thisMap[list[i]] = true
+	}
+
+	fmt.Println(thisMap)
+	fmt.Println(list)
+	lengths := map[int]int{}
+	/*val := recCount2(list[len(list)-1], thisMap, 0, "", lengths)
+
+	fmt.Printf("Res: %d\n", val)
+	fmt.Println(lengths)
+	val = 1*/
+	sums := []int{}
+
+	for i := 0; i < len(list); i++ {
+		count := countOptions(list, i)
+		total := 0
+		if i > 6 {
+			for x := i; x > i-count; x-- {
+				total += sums[x-1]
+			}
+		} else {
+			if i == 0 {
+				total = 0
+			} else {
+				thisMMap := map[int]bool{}
+				for t := 0; t < i; t++ {
+					thisMMap[list[t]] = true
+				}
+				fmt.Println(thisMMap)
+				total = recCount2(list[i-1], thisMMap, 0, "", lengths)
+			}
+		}
+
+		sums = append(sums, total)
+	}
+	fmt.Println(list)
+	fmt.Printf("Result is %d\n", sums)
+	fmt.Printf("The result is %d\n", sums[len(sums)-1])
+	/*count := countOptions(list, len(list)-1)
+
+	fmt.Printf("Init Diff: %d\n", count)
+
+	for i := len(list) - 2; i > 0; i-- {
+		diff := countOptions(list, i)
+		fmt.Printf("Diff: %d\n", diff)
+
+		count += diff
+		fmt.Printf("Calc: %d\n", count)
+
+	}
+	fmt.Printf("Res new alg: %d\n", count)*/
+}
+func countOptions(list []int, current int) int {
+	count := 0
+	for i := current - 1; i >= 0; i-- {
+		diff := list[current] - list[i]
+		fmt.Printf("diff %d - %d\n", list[current], list[i])
+		if diff <= 3 {
+			count++
+		} else {
+			break
+		}
+	}
+	return count
+}
+
+func recCount2(max int, thisMap map[int]bool, current int, path string, lengths map[int]int) int {
+	count := 0
+	//fmt.Printf("Current %d\n", current)
+
+	path += "-"
+	path += strconv.Itoa(current)
+	if current >= max {
+		lng := len(strings.Split(string(path), "-")) - 1
+
+		fmt.Printf("Reached the end : %s\n", path)
+		fmt.Println(lng)
+		if _, ok := lengths[lng]; ok {
+			lengths[lng]++
+		} else {
+			lengths[lng] = 1
+		}
+		count = 1
+	} else {
+		onePlus := current
+		twoPlus := current
+		threePlus := current
+		onePlus++
+		twoPlus += 2
+		threePlus += 3
+		if _, ok := thisMap[onePlus]; ok {
+			//fmt.Printf("%d Has 1p %d\n", current, onePlus)
+			count += recCount2(max, thisMap, onePlus, path, lengths)
+		}
+		if _, ok := thisMap[twoPlus]; ok {
+			//fmt.Printf("%d Has 1p %d\n", current, onePlus)
+			count += recCount2(max, thisMap, twoPlus, path, lengths)
+		}
+		if _, ok := thisMap[threePlus]; ok {
+			//fmt.Printf("%d Has 3p %d\n", current, threePlus)
+			count += recCount2(max, thisMap, threePlus, path, lengths)
+		}
+	}
+	return count
+
+}
+
+func recCount(max int, thisMap map[int]bool, current int, res map[string]bool, path string) int {
+	count := 0
+	//fmt.Printf("Current %d\n", current)
+
+	path += "-"
+	path += strconv.Itoa(current)
+	if current >= max {
+		fmt.Println("Reached the end")
+		res[path] = true
+		count = 1
+	} else {
+		onePlus := current
+		threePlus := current
+		onePlus++
+		threePlus += 3
+		if _, ok := thisMap[onePlus]; ok {
+			//fmt.Printf("%d Has 1p %d\n", current, onePlus)
+			count += recCount(max, thisMap, onePlus, res, path)
+		}
+		if _, ok := thisMap[threePlus]; ok {
+			//fmt.Printf("%d Has 3p %d\n", current, threePlus)
+			count += recCount(max, thisMap, threePlus, res, path)
+		}
+
+	}
+	return count
+
 }
 
 func dayNine() {
