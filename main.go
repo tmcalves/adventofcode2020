@@ -16,10 +16,288 @@ const (
 	openSpace byte = '.'
 	stepDown  int  = 2
 	stepRight int  = 1
+
+	//day11
+	freeSit  = 'L'
+	floor    = '.'
+	occupied = '#'
 )
 
 func main() {
-	dayTen()
+	dayEleven()
+}
+
+func dayEleven() {
+	lines := readFile("inputs/day11.txt")
+	grid := [][]byte{}
+	for i := 0; i < len(lines); i++ {
+		gridLine := []byte{}
+		line := lines[i]
+		for x := 0; x < len(line); x++ {
+			gridLine = append(gridLine, line[x])
+		}
+		grid = append(grid, gridLine)
+
+	}
+	printGrid(grid)
+
+	originalGrid := [][]byte{}
+	originalGrid = grid
+
+	newGrid := switchGrid(grid)
+	printGrid(newGrid)
+	for !areGridsEqual(grid, newGrid) {
+		auxGrid := switchGrid(newGrid)
+		printGrid(auxGrid)
+		grid = newGrid
+		newGrid = auxGrid
+	}
+
+	found := false
+
+	grid2 := [][]byte{}
+	grid2 = originalGrid
+	//copy(grid2, originalGrid)
+	fmt.Println("GRID 2")
+	printGrid(grid2)
+
+	for !found {
+		newGrid2 := switchGridPart2(grid2)
+		found = areGridsEqual(grid2, newGrid2)
+
+		grid2 = newGrid2
+		printGrid(grid2)
+
+	}
+
+	fmt.Printf("There are %d occupied sits for part 1\n", countGridOccupiedSits(newGrid))
+	fmt.Printf("There are %d occupied sits for part 2\n", countGridOccupiedSits(grid2))
+
+}
+func countGridOccupiedSits(grid [][]byte) int {
+	count := 0
+	for i := 0; i < len(grid); i++ {
+		for x := 0; x < len(grid[i]); x++ {
+			if grid[i][x] == occupied {
+				count++
+			}
+		}
+	}
+	return count
+}
+func areGridsEqual(grid [][]byte, grid2 [][]byte) bool {
+
+	for i := 0; i < len(grid); i++ {
+		for x := 0; x < len(grid[i]); x++ {
+			if grid[i][x] != grid2[i][x] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func printGrid(grid [][]byte) {
+	fmt.Println("=================")
+	for i := 0; i < len(grid); i++ {
+		fmt.Println(string(grid[i]))
+	}
+}
+
+func switchGrid(grid [][]byte) [][]byte {
+	newGrid := [][]byte{}
+	for i := 0; i < len(grid); i++ {
+		gridLine := []byte{}
+		for x := 0; x < len(grid[i]); x++ {
+			b := getNewChar(grid, i, x)
+			gridLine = append(gridLine, b)
+		}
+		newGrid = append(newGrid, gridLine)
+	}
+
+	return newGrid
+}
+
+func switchGridPart2(grid [][]byte) [][]byte {
+	newGrid := [][]byte{}
+	for i := 0; i < len(grid); i++ {
+		gridLine := []byte{}
+		for x := 0; x < len(grid[i]); x++ {
+			b := getNewCharV2(grid, i, x)
+			gridLine = append(gridLine, b)
+		}
+		newGrid = append(newGrid, gridLine)
+	}
+
+	return newGrid
+}
+
+func getNewChar(grid [][]byte, currentIndexGrid int, currentIndexLine int) byte {
+	toReturn := grid[currentIndexGrid][currentIndexLine]
+	switch toReturn {
+	case freeSit:
+		if adjentOccupied(grid, currentIndexGrid, currentIndexLine) == 0 {
+			return occupied
+		}
+		break
+
+	case occupied:
+		if adjentOccupied(grid, currentIndexGrid, currentIndexLine) >= 4 {
+			return freeSit
+		}
+		break
+
+	default:
+		break
+	}
+
+	return toReturn
+}
+
+func getNewCharV2(grid [][]byte, currentIndexGrid int, currentIndexLine int) byte {
+	toReturn := grid[currentIndexGrid][currentIndexLine]
+	switch toReturn {
+	case freeSit:
+		if areOccupiedVisible(grid, currentIndexGrid, currentIndexLine) == 0 {
+			return occupied
+		}
+		break
+
+	case occupied:
+		if areOccupiedVisible(grid, currentIndexGrid, currentIndexLine) >= 5 {
+			return freeSit
+		}
+		break
+
+	default:
+		break
+	}
+
+	return toReturn
+}
+
+func adjentOccupied(grid [][]byte, currentIndexGrid int, currentIndexLine int) int {
+
+	count := 0
+	for i := currentIndexGrid - 1; i <= currentIndexGrid+1; i++ {
+		if i >= 0 && i < len(grid) {
+			for x := currentIndexLine - 1; x <= currentIndexLine+1; x++ {
+				if x >= 0 && x < len(grid[i]) && !(x == currentIndexLine && i == currentIndexGrid) {
+					if grid[i][x] == occupied {
+						count++
+					}
+
+				}
+
+			}
+		}
+	}
+	return count
+}
+
+func areOccupiedVisibleAllTheWay(grid [][]byte, currentIndexGrid int, currentIndexLine int) int {
+
+	count := 0
+	for i := 1; i < len(grid); i++ {
+		for x := 1; x < len(grid[i]); x++ {
+			count += isOcupiedP1(grid, currentIndexGrid-i, currentIndexLine)   //top
+			count += isOcupiedP1(grid, currentIndexGrid+i, currentIndexLine)   //down
+			count += isOcupiedP1(grid, currentIndexGrid-i, currentIndexLine-x) //top left
+			count += isOcupiedP1(grid, currentIndexGrid-i, currentIndexLine+x) // top right
+			count += isOcupiedP1(grid, currentIndexGrid+i, currentIndexLine+x) // down right
+			count += isOcupiedP1(grid, currentIndexGrid+i, currentIndexLine-x) // down left
+			count += isOcupiedP1(grid, currentIndexGrid, currentIndexLine+x)   // right
+			count += isOcupiedP1(grid, currentIndexGrid, currentIndexLine-x)   // left
+		}
+	}
+	return count
+}
+
+func areOccupiedVisible(grid [][]byte, currentIndexGrid int, currentIndexLine int) int {
+
+	count := 0
+	found := [8]bool{}
+	for i := 1; i < len(grid); i++ {
+		if !found[0] {
+			aux, f := isOcupied(grid, currentIndexGrid-i, currentIndexLine) //top
+			count += aux
+			if f {
+				found[0] = true
+			}
+		}
+		if !found[1] {
+			aux, f := isOcupied(grid, currentIndexGrid+i, currentIndexLine) //down
+			count += aux
+			if f {
+				found[1] = true
+			}
+		}
+		if !found[2] {
+			aux, f := isOcupied(grid, currentIndexGrid-i, currentIndexLine-i) //top left
+			count += aux
+			if f {
+				found[2] = true
+			}
+		}
+		if !found[3] {
+			aux, f := isOcupied(grid, currentIndexGrid-i, currentIndexLine+i) // top right
+			count += aux
+			if f {
+				found[3] = true
+			}
+		}
+		if !found[4] {
+			aux, f := isOcupied(grid, currentIndexGrid+i, currentIndexLine+i) // down right
+			count += aux
+			if f {
+				found[4] = true
+			}
+		}
+		if !found[5] {
+			aux, f := isOcupied(grid, currentIndexGrid+i, currentIndexLine-i) // down left
+			count += aux
+			if f {
+				found[5] = true
+			}
+		}
+		if !found[6] {
+			aux, f := isOcupied(grid, currentIndexGrid, currentIndexLine+i) // right
+			count += aux
+			if f {
+				found[6] = true
+			}
+		}
+		if !found[7] {
+			aux, f := isOcupied(grid, currentIndexGrid, currentIndexLine-i) // left
+			count += aux
+			if f {
+				found[7] = true
+			}
+		}
+	}
+	return count
+}
+
+func isOcupiedP1(grid [][]byte, currentIndexGrid int, currentIndexLine int) int {
+	if currentIndexGrid < 0 || currentIndexGrid >= len(grid) || currentIndexLine < 0 || currentIndexLine >= len(grid[currentIndexGrid]) {
+		return 0
+	}
+
+	if grid[currentIndexGrid][currentIndexLine] == occupied {
+		return 1
+	}
+	return 0
+}
+func isOcupied(grid [][]byte, currentIndexGrid int, currentIndexLine int) (int, bool) {
+	if currentIndexGrid < 0 || currentIndexGrid >= len(grid) || currentIndexLine < 0 || currentIndexLine >= len(grid[currentIndexGrid]) {
+		return 0, true
+	}
+
+	if grid[currentIndexGrid][currentIndexLine] == occupied {
+		return 1, true
+	}
+	return 0, grid[currentIndexGrid][currentIndexLine] != floor
 }
 
 func dayTen() {
