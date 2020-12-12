@@ -11,6 +11,19 @@ import (
 	"strings"
 )
 
+var coordMap = map[byte]int{
+	'E': 3,
+	'N': 2,
+	'W': 1,
+	'S': 0,
+}
+var coordMapInt = map[int]byte{
+	3: 'E',
+	2: 'N',
+	1: 'W',
+	0: 'S',
+}
+
 const (
 	tree      byte = '#'
 	openSpace byte = '.'
@@ -21,12 +34,219 @@ const (
 	freeSit  = 'L'
 	floor    = '.'
 	occupied = '#'
+
+	//day12
+
 )
 
 func main() {
-	dayEleven()
+	dayTwelve()
 }
 
+// WaypointValue for day12
+type WaypointValue struct {
+	direction byte
+	value     int
+}
+
+func dayTwelve() {
+	lines := readFile("inputs/day12.txt")
+	r := regexp.MustCompile("^(\\w)(\\d+)$")
+	waypointCoords := map[int]int{
+		3: 10,
+		2: 1,
+		1: 0,
+		0: 0,
+	}
+	x := 0
+	y := 0
+	for _, line := range lines {
+		fmt.Println(waypointCoords)
+
+		match := r.FindStringSubmatch(line)
+		action := match[1][0]
+		val, _ := strconv.Atoi(match[2])
+		switch action {
+		case 'N', 'S', 'E', 'W':
+			waypointCoords = addValueWaypoint(waypointCoords, val, action)
+			break
+		case 'L':
+			fmt.Printf("Rotating left by %d\n", val)
+			waypointCoords = rotateLeftWaypoint(waypointCoords, val)
+			break
+		case 'R':
+			fmt.Printf("Rotating right by %d\n", val)
+			waypointCoords = rotateRightWaypoint(waypointCoords, val)
+			break
+		case 'F':
+			auxX, auxY := mapToCoords(waypointCoords)
+			x += auxX * val
+			y += auxY * val
+			//x, y = addValue(x, y, val, currentDirection)
+			break
+		default:
+			fmt.Printf("What is %c\n", action)
+		}
+	}
+
+	endedX := "East"
+	endedY := "North"
+	if x < 0 {
+		endedX = "West"
+		x *= -1
+	}
+
+	if y < 0 {
+		endedY = "South"
+		y *= -1
+	}
+
+	fmt.Printf("Ended in %d %s ; %d %s. Sum is %d\n", x, endedX, y, endedY, x+y)
+
+}
+
+func getDirections(thisMap map[int]int) (byte, byte) {
+	i := 0
+	arr := [2]byte{}
+	for x := 0; x < 4; x++ {
+		if thisMap[x] != 0 {
+			arr[i] = coordMapInt[x]
+			i++
+			if i >= 2 {
+				break
+			}
+		}
+	}
+
+	return arr[0], arr[1]
+}
+func addValueWaypoint(thisMap map[int]int, val int, direction byte) map[int]int {
+	x, y := mapToCoords(thisMap)
+	x, y = addValue(x, y, val, direction)
+
+	thisMap = coordsToMap(x, y)
+	return thisMap
+}
+func mapToCoords(thisMap map[int]int) (int, int) {
+	x := 0
+	y := 0
+	if thisMap[3] == 0 {
+		x = thisMap[1] * -1
+	} else {
+		x = thisMap[3]
+	}
+
+	if thisMap[2] == 0 {
+		y = thisMap[0] * -1
+	} else {
+		y = thisMap[2]
+	}
+
+	return x, y
+}
+
+func coordsToMap(x int, y int) map[int]int {
+	thisMap := map[int]int{}
+	if x < 0 {
+		thisMap[1] = x * -1
+		thisMap[3] = 0
+	} else {
+		thisMap[1] = 0
+		thisMap[3] = x
+	}
+
+	if y < 0 {
+		thisMap[0] = y * -1
+		thisMap[2] = 0
+	} else {
+		thisMap[0] = 0
+		thisMap[2] = y
+	}
+
+	return thisMap
+
+}
+
+func addValue(x int, y int, val int, direction byte) (int, int) {
+
+	fmt.Printf("Adding value %d to %c\n", val, direction)
+
+	switch direction {
+	case 'N':
+		y += val
+		break
+
+	case 'S':
+		y -= val
+		break
+
+	case 'E':
+		x += val
+		break
+
+	case 'W':
+		x -= val
+		break
+	default:
+		fmt.Printf("Don't know where to add %c\n", direction)
+	}
+	return x, y
+}
+
+func rotateLeftWaypoint(thisMap map[int]int, angle int) map[int]int {
+	return rotateWaypoint(thisMap, angle*-1)
+}
+
+func rotateRightWaypoint(thisMap map[int]int, angle int) map[int]int {
+	return rotateWaypoint(thisMap, angle)
+}
+
+func rotateWaypoint(thisMap map[int]int, angle int) map[int]int {
+	times := angle / 90
+	newMap := map[int]int{}
+	for i := 0; i <= 3; i++ {
+		currentInd := roundVal(i + times)
+		newMap[currentInd] = thisMap[i]
+	}
+
+	return newMap
+}
+
+func roundVal(x int) int {
+	if x > 3 {
+		return x - 4
+	}
+
+	if x < 0 {
+		return x + 4
+	}
+	return x
+}
+
+func rotateLeft(current byte, angle int) byte {
+	return rotate(current, angle*-1)
+}
+
+func rotateRight(current byte, angle int) byte {
+	return rotate(current, angle)
+}
+
+func rotate(current byte, angle int) byte {
+
+	times := angle / 90
+
+	currentIndex := coordMap[current] + times
+	if currentIndex > 3 {
+		currentIndex -= 4
+	}
+	if currentIndex < 0 {
+		currentIndex += 4
+	}
+
+	newC := coordMapInt[currentIndex]
+	fmt.Printf("Rotated from %c to %c\n", current, newC)
+	return newC
+}
 func dayEleven() {
 	lines := readFile("inputs/day11.txt")
 	grid := [][]byte{}
