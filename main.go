@@ -40,7 +40,48 @@ const (
 )
 
 func main() {
-	dayTwelve()
+	dayThirteen()
+}
+
+func dayThirteen() {
+	lines := readFile("inputs/day13.txt")
+	timestamp, _ := strconv.Atoi(lines[0])
+	buses := strings.Split(string(lines[1]), ",")
+	min := timestamp
+	busNum := -1
+
+	arr := []int{}
+
+	for i := 0; i < len(buses); i++ {
+		if buses[i] != "x" {
+			val, _ := strconv.Atoi(buses[i])
+			arr = append(arr, val)
+			res := timestamp % val
+			res = val - res
+			if res < min {
+				min = res
+				busNum = val
+			}
+		} else {
+			arr = append(arr, 1)
+		}
+
+	}
+
+	fmt.Printf("Min time is %d for bus %d. Res: %d\n", min, busNum, min*busNum)
+
+	res := 0
+	product := 1
+	for i := 0; i < len(arr); i++ {
+		bus := arr[i]
+		for (res+i)%bus != 0 {
+			res += product
+		}
+		product *= bus
+	}
+
+	fmt.Printf("Res p2 %d\n", res)
+
 }
 
 // WaypointValue for day12
