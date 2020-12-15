@@ -40,7 +40,58 @@ const (
 )
 
 func main() {
-	dayFourteen()
+	dayFifteen1()
+}
+
+func dayFifteen1() {
+	play := map[int][]int{}
+	i := 0
+	line := readFile("inputs/day15.txt")
+
+	numbers := strings.Split(string(line[0]), ",")
+
+	previous := -1
+	wasFirst := true
+	for i = 0; i < len(numbers); i++ {
+		val, _ := strconv.Atoi(numbers[i])
+		previous = val
+		if _, ok := play[val]; ok {
+			wasFirst = false
+			play[previous] = append(play[val], i+1)
+		} else {
+			wasFirst = true
+			play[previous] = []int{i + 1}
+		}
+	}
+
+	fmt.Println(play)
+
+	for ; i < 30000000; i++ {
+		val := previous
+		toInsert := 0
+		if !wasFirst {
+			diff := play[val][len(play[val])-1] - play[val][len(play[val])-2]
+			//diff := 0
+			/*fmt.Print(diff)
+			for x := len(play[val]) - 2; x >= 0; x-- {
+				fmt.Printf("%d - %d\n", play[val][x+1], play[val][x])
+				diff += (play[val][x+1] - play[val][x])
+			}*/
+			toInsert = diff
+
+		}
+		if _, ok := play[toInsert]; ok {
+			play[toInsert] = append(play[toInsert], i+1)
+			wasFirst = false
+		} else {
+			play[toInsert] = []int{i + 1}
+			wasFirst = true
+		}
+		previous = toInsert
+		//fmt.Printf("Turn %d - Inserted %d\n", i+1, toInsert)
+	}
+	fmt.Printf("Turn %d - Inserted %d\n", i, previous)
+
 }
 
 // Bitmask object
@@ -50,7 +101,7 @@ type Bitmask struct {
 	//allValidAddresses []string
 	value int
 	//result            int64
-	resolvedMask map[string]int
+	resolvedMask map[string]int64
 }
 
 func dayFourteen() {
@@ -70,26 +121,31 @@ func dayFourteen() {
 			match := r.FindStringSubmatch(lines[i])
 			add, _ := strconv.Atoi(match[1])
 			val, _ := strconv.Atoi(match[2])
+			addressList = append(addressList, add)
 
 			if _, ok := thisMap[add]; ok {
 				thisMap[add].address = toBinary(val)
 				//thisMap[add].mask = currentMask
 				resolvedM := getResolvedMaks(add, val, currentMask)
 				for k, v := range resolvedM {
-					thisMap[add].resolvedMask[k] = v
+					thisMap[add].resolvedMask[k] = int64(v)
 					sumMap[k] = int64(v)
 				}
 			} else {
 				thisMap[add] = &Bitmask{}
 				thisMap[add].address = toBinary(val)
 				//thisMap[add].mask = currentMask
-				thisMap[add].resolvedMask = getResolvedMaks(add, val, currentMask)
+				resolvedM := getResolvedMaks(add, val, currentMask)
+				thisMap[add].resolvedMask = map[string]int64{}
+				for k, v := range resolvedM {
+					thisMap[add].resolvedMask[k] = int64(v)
+					sumMap[k] = int64(v)
+				}
 				for k, v := range thisMap[add].resolvedMask {
 					sumMap[k] = int64(v)
 				}
 
 			}
-			addressList = append(addressList, add)
 
 		}
 	}
