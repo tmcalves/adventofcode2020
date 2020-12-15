@@ -40,9 +40,263 @@ const (
 )
 
 func main() {
-	dayThirteen()
+	dayFourteen()
 }
 
+// Bitmask object
+type Bitmask struct {
+	//mask              string
+	address []string
+	//allValidAddresses []string
+	value int
+	//result            int64
+	resolvedMask map[string]int
+}
+
+func dayFourteen() {
+	lines := readFile("inputs/day14.txt")
+
+	r := regexp.MustCompile("^mem\\[(\\d+)\\] \\= (\\d+)$")
+
+	thisMap := map[int]*Bitmask{}
+	sumMap := map[string]int64{}
+	addressList := []int{}
+	currentMask := ""
+	for i := 0; i < len(lines); i++ {
+		if strings.HasPrefix(lines[i], "mask") {
+			v := strings.Replace(lines[i], "mask = ", "", -1)
+			currentMask = v
+		} else {
+			match := r.FindStringSubmatch(lines[i])
+			add, _ := strconv.Atoi(match[1])
+			val, _ := strconv.Atoi(match[2])
+
+			if _, ok := thisMap[add]; ok {
+				thisMap[add].address = toBinary(val)
+				//thisMap[add].mask = currentMask
+				resolvedM := getResolvedMaks(add, val, currentMask)
+				for k, v := range resolvedM {
+					thisMap[add].resolvedMask[k] = v
+					sumMap[k] = int64(v)
+				}
+			} else {
+				thisMap[add] = &Bitmask{}
+				thisMap[add].address = toBinary(val)
+				//thisMap[add].mask = currentMask
+				thisMap[add].resolvedMask = getResolvedMaks(add, val, currentMask)
+				for k, v := range thisMap[add].resolvedMask {
+					sumMap[k] = int64(v)
+				}
+
+			}
+			addressList = append(addressList, add)
+
+		}
+	}
+
+	//solve141(thisMap)
+
+	fmt.Println("TESTING")
+	for _, p := range thisMap {
+		fmt.Println(*p)
+	}
+
+	var sum int64 = 0
+	for _, v := range sumMap {
+		sum += v
+	}
+
+	solve142(thisMap, addressList)
+	fmt.Print("Ressss is: ")
+	fmt.Println(sum)
+}
+
+/*func solve141(thisMap map[int]*Bitmask) {
+
+	for key, value := range thisMap {
+		result := []string{}
+
+		for i := len(value.mask) - 1; i >= 0; i-- {
+			bit := 0
+			if value.mask[i] != 'X' {
+				bit, _ = strconv.Atoi(string(value.mask[i]))
+				//fmt.Printf("Using - Mask has bit %d - %s - %d\n", bit, arr[x].mask, i)
+			} else {
+				lA := len(value.address) - (len(value.mask) - i)
+				if lA >= 0 {
+					fmt.Println(string(value.address[lA]))
+					bit, _ = strconv.Atoi(string(value.address[lA]))
+					//fmt.Printf("Using - V has bit %d - %s - %d\n", bit, v, lA)
+				} else {
+					fmt.Println("Using default 0")
+				}
+			}
+			//fmt.Printf("Appending %d - index %d\n", bit, i)
+			result = append([]string{strconv.Itoa(bit)}, result...)
+		}
+		thisMap[key].result = toDecimal(result)
+
+	}
+	var sum int64 = 0
+
+	for _, value := range thisMap {
+		sum += toDecimal(value.address)
+	}
+
+	fmt.Printf("Res is %d\n", sum)
+
+}*/
+
+func solve142(thisMap map[int]*Bitmask, orderedList []int) {
+
+	/*fmt.Println(orderedList)
+	beenBefore := map[int]bool{}
+	for listIndex := 0; listIndex < len(orderedList); listIndex++ {
+		if _, ok := beenBefore[orderedList[listIndex]]; ok {
+			continue
+		}
+		beenBefore[orderedList[listIndex]] = true
+		value := thisMap[orderedList[listIndex]]
+		fmt.Printf("TESTING FOR %d MASK: %s\n", toDecimal(value.address), value.mask)
+		//fmt.Println(value)
+
+	}
+	var sum int64 = 0
+	beenBefore = map[int]bool{}
+	sumMap := map[int64]int64{}
+	for i := 0; i < len(orderedList); i++ {
+		if _, ok := beenBefore[orderedList[i]]; ok {
+			continue
+		}
+		beenBefore[orderedList[i]] = true
+		value := thisMap[orderedList[i]]
+		for _, pppp := range value.allValidAddresses {
+			decimalValue := toDecimalString(pppp)
+			sumMap[decimalValue] = toDecimal(value.address)
+		}
+	}
+	fmt.Println()
+	for b, w := range sumMap {
+		fmt.Printf("%d - %d\n", b, w)
+		sum += w
+	}
+	//fmt.Println(thisMap)
+	for _, v := range thisMap {
+		fmt.Println(v)
+	}*/
+	var sum int64 = 0
+	beenBefore := map[int]bool{}
+	sumMap := map[int64]int64{}
+	for i := 0; i < len(orderedList); i++ {
+		if _, ok := beenBefore[orderedList[i]]; ok {
+			continue
+		}
+		beenBefore[orderedList[i]] = true
+		value := thisMap[orderedList[i]]
+
+		for k1, v1 := range value.resolvedMask {
+			decimalValue := toDecimalString(k1)
+			sumMap[decimalValue] = int64(v1)
+		}
+	}
+	for b, w := range sumMap {
+		fmt.Printf("%d - %d\n", b, w)
+		sum += w
+	}
+	fmt.Printf("Res is\n")
+	fmt.Println(sum)
+}
+
+// address, orderedList[listIndex], mask
+func getResolvedMaks(address int, value int, mask string) map[string]int {
+	allValidAddresses := map[string]int{}
+	allValidAddressesAux := []string{}
+	for i := len(mask) - 1; i >= 0; i-- {
+		bit := 0
+		if mask[i] == 'X' {
+			aux := []string{}
+			if len(allValidAddressesAux) == 0 {
+				aux = append(aux, "1")
+				aux = append(aux, "0")
+			}
+			for _, s := range allValidAddressesAux {
+				aux = append(aux, ("1" + s))
+				aux = append(aux, ("0" + s))
+			}
+			allValidAddressesAux = aux
+			//fmt.Print("Added more valid addresses\n")
+			//fmt.Printf("Using - Mask has bit %d - %s - %d\n", bit, arr[x].mask, i)
+		} else {
+			bit, _ = strconv.Atoi(string(mask[i]))
+			if bit == 0 {
+				actualAddres := toBinary(address)
+				lA := len(actualAddres) - (len(mask) - i)
+				if lA >= 0 {
+					//fmt.Println(string(actualAddres[lA]))
+					bit, _ = strconv.Atoi(string(actualAddres[lA]))
+					//fmt.Printf("Using - V has bit %d - %s - %d\n", bit, actualAddres, lA)
+				} else {
+					//fmt.Printf("Using default 0 - %d\n", i)
+				}
+			} else {
+				bit = 1
+			}
+
+			aux := []string{}
+
+			for _, s := range allValidAddressesAux {
+				aux = append(aux, (strconv.Itoa(bit) + s))
+			}
+			if len(allValidAddressesAux) == 0 {
+				aux = append(aux, strconv.Itoa(bit))
+			}
+			allValidAddressesAux = aux
+		}
+	}
+
+	for _, v := range allValidAddressesAux {
+		allValidAddresses[v] = value
+	}
+
+	return allValidAddresses
+}
+
+func toDecimalString(val string) int64 {
+	var v int64 = 0
+	x := 0
+	for i := len(val) - 1; i >= 0; i-- {
+		intV, _ := strconv.Atoi(string(val[i]))
+		i64 := float64(x)
+		x++
+		pow := math.Pow(2, i64)
+		v += int64(pow * float64(intV))
+		//fmt.Printf("val[i]- %s, intV: %d - i64: %f, pow: %f, v: %d\n", val[i], intV, i64, pow, v)
+	}
+	return v
+}
+func toDecimal(val []string) int64 {
+	var v int64 = 0
+	x := 0
+	for i := len(val) - 1; i >= 0; i-- {
+		intV, _ := strconv.Atoi(val[i])
+		i64 := float64(x)
+		x++
+		pow := math.Pow(2, i64)
+		v += int64(pow * float64(intV))
+		//fmt.Printf("val[i]- %s, intV: %d - i64: %f, pow: %f, v: %d\n", val[i], intV, i64, pow, v)
+	}
+	return v
+}
+func toBinary(val int) []string {
+	arr := []string{}
+	for val != 0 {
+		res := val % 2
+		val /= 2
+		arr = append([]string{strconv.Itoa(res)}, arr...)
+	}
+	return arr
+
+}
 func dayThirteen() {
 	lines := readFile("inputs/day13.txt")
 	timestamp, _ := strconv.Atoi(lines[0])
